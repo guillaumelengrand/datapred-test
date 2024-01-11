@@ -9,11 +9,11 @@ function App() {
 
     // Methods
     const fetchFromDate = async date => {
-        let jsDate = new Date(date).toISOString().replace('.000', '');
+        let isoDate = `${new Date(date).toISOString().split('.')[0]}Z`;
 
         try {
             const fetchRuns = await fetch(
-                `https://test-backend.i.datapred.com/without-auth/flows/1/runs?production_date=${jsDate}`,
+                `https://test-backend.i.datapred.com/without-auth/flows/1/runs?production_date=${isoDate}`,
                 {
                     headers: {
                         Accept: 'application/json',
@@ -24,13 +24,11 @@ function App() {
             );
 
             if (fetchRuns.ok) {
-                let runs = await fetchRuns.json();
-
-                let run = runs.results[0];
+                let run = (await fetchRuns.json()).results[0];
                 if (run.complete) {
                     setMsg(null);
 
-                    let fetchOutputs = await fetch(
+                    const fetchOutputs = await fetch(
                         `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs`,
                         {
                             headers: {
@@ -41,9 +39,7 @@ function App() {
                         },
                     );
                     if (fetchOutputs.ok) {
-                        let outputs = await fetchOutputs.json();
-                        let output = outputs.results[0];
-                        console.log({outputs});
+                        let output = (await fetchOutputs.json()).results[0];
                         let fetchTrends = await fetch(
                             `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs/${output.id}/trends`,
                             {
@@ -56,8 +52,9 @@ function App() {
                         );
                         if (fetchTrends.ok) {
                             let trends = await fetchTrends.json();
-                            console.log({trends});
                             setRunTrends(trends.results);
+                        } else {
+                            setMsg('No complete run for this date');
                         }
                     }
                 } else {
@@ -73,8 +70,10 @@ function App() {
     return (
         <div className="App">
             <div className="App-header">
-                <div>Choose a date:</div>
-                <input type="date" onChange={e => fetchFromDate(e.currentTarget.value)} />
+                <div className="form">
+                    <label htmlFor="datepicker">Choose a date:</label>
+                    <input id="datepicker" type="date" onChange={e => fetchFromDate(e.currentTarget.value)} />
+                </div>
                 {msg && <div>{msg}</div>}
 
                 {runTrends && !msg && (
@@ -89,7 +88,7 @@ function App() {
                             </thead>
                             <tbody>
                                 {runTrends.map(trend => (
-                                    <tr>
+                                    <tr key={trend.id}>
                                         <td>{formatDate(trend.horizon_date)}</td>
                                         <td>{trend.horizon_name}</td>
                                         <td>{trend.trend}</td>
