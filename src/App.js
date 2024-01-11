@@ -7,11 +7,11 @@ function App() {
 
     // Methods
     const fetchFromDate = async date => {
-        let isoDate = new Date(date).toISOString().replace('.000', '');
+        let jsDate = new Date(date).toISOString().replace('.000', '');
 
         try {
             const fetchRuns = await fetch(
-                `https://test-backend.i.datapred.com/without-auth/flows/1/runs?production_date=${isoDate}`,
+                `https://test-backend.i.datapred.com/without-auth/flows/1/runs?production_date=${jsDate}`,
                 {
                     headers: {
                         Accept: 'application/json',
@@ -20,14 +20,51 @@ function App() {
                     method: 'GET',
                 },
             );
+
             if (fetchRuns.ok) {
-                console.log('Run find');
-                setMsg(null);
+                let runs = await fetchRuns.json();
+
+                let run = runs.results[0];
+                if (run.complete) {
+                    setMsg(null);
+
+                    let fetchOutputs = await fetch(
+                        `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs`,
+                        {
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            method: 'GET',
+                        },
+                    );
+                    if (fetchOutputs.ok) {
+                        let outputs = await fetchOutputs.json();
+                        let output = outputs.results[0];
+                        console.log({outputs});
+                        let fetchTrents = await fetch(
+                            `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs/${output.id}/trends`,
+                            {
+                                headers: {
+                                    Accept: 'application/json',
+                                    'Content-Type': 'application/json',
+                                },
+                                method: 'GET',
+                            },
+                        );
+                        if (fetchTrents.ok) {
+                            let trents = await fetchTrents.json();
+                            console.log({trents});
+                        }
+                    }
+                } else {
+                    setMsg('No complete run for this date');
+                }
             } else {
                 setMsg('No run available for this date');
             }
         } catch (error) {
-            console.log({error});
+            console.log(error);
         }
     };
     return (
