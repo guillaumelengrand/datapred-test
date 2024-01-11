@@ -12,6 +12,7 @@ function App() {
         let isoDate = `${new Date(date).toISOString().split('.')[0]}Z`;
 
         try {
+            /** Fetch runs at the selected Date */
             const fetchRuns = await fetch(
                 `https://test-backend.i.datapred.com/without-auth/flows/1/runs?production_date=${isoDate}`,
                 {
@@ -28,6 +29,7 @@ function App() {
                 if (run.complete) {
                     setMsg(null);
 
+                    /** If a run is find and complete retrieve the outputs' run */
                     const fetchOutputs = await fetch(
                         `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs`,
                         {
@@ -39,6 +41,7 @@ function App() {
                         },
                     );
                     if (fetchOutputs.ok) {
+                        /** An output is found, fetch for the trends */
                         let output = (await fetchOutputs.json()).results[0];
                         let fetchTrends = await fetch(
                             `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs/${output.id}/trends`,
@@ -51,20 +54,25 @@ function App() {
                             },
                         );
                         if (fetchTrends.ok) {
+                            /** Trends are found and set to the state */
                             let trends = await fetchTrends.json();
                             setRunTrends(trends.results);
                         } else {
+                            /** Trends are not found */
                             setMsg('No complete run for this date');
                         }
                     }
                 } else {
+                    /** A run is found but not complete */
                     setMsg('No complete run for this date');
                 }
             } else {
+                /** No run found  */
                 setMsg('No run available for this date');
             }
         } catch (error) {
             console.log(error);
+            setMsg('An error has occurred when loading data');
         }
     };
     return (
