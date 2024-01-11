@@ -1,9 +1,11 @@
 import {useState} from 'react';
 import './App.css';
+import {formatDate} from './lib/utils';
 
 function App() {
     // State
     const [msg, setMsg] = useState(null);
+    const [runTrends, setRunTrends] = useState(null);
 
     // Methods
     const fetchFromDate = async date => {
@@ -42,7 +44,7 @@ function App() {
                         let outputs = await fetchOutputs.json();
                         let output = outputs.results[0];
                         console.log({outputs});
-                        let fetchTrents = await fetch(
+                        let fetchTrends = await fetch(
                             `https://test-backend.i.datapred.com/without-auth/flows/1/runs/${run.id}/outputs/${output.id}/trends`,
                             {
                                 headers: {
@@ -52,9 +54,10 @@ function App() {
                                 method: 'GET',
                             },
                         );
-                        if (fetchTrents.ok) {
-                            let trents = await fetchTrents.json();
-                            console.log({trents});
+                        if (fetchTrends.ok) {
+                            let trends = await fetchTrends.json();
+                            console.log({trends});
+                            setRunTrends(trends.results);
                         }
                     }
                 } else {
@@ -73,6 +76,29 @@ function App() {
                 <div>Choose a date:</div>
                 <input type="date" onChange={e => fetchFromDate(e.currentTarget.value)} />
                 {msg && <div>{msg}</div>}
+
+                {runTrends && !msg && (
+                    <>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Horizon Date</th>
+                                    <th>Horizon Name</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {runTrends.map(trend => (
+                                    <tr>
+                                        <td>{formatDate(trend.horizon_date)}</td>
+                                        <td>{trend.horizon_name}</td>
+                                        <td>{trend.trend}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </>
+                )}
             </div>
         </div>
     );
